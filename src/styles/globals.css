@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+
+
+@layer base {
+  :root {
+    --bg-main: radial-gradient(
+      circle at top,
+      hsla(219, 90%, 23%, 0.885),
+      hsl(240, 41%, 10%) 60%
+    );
+  }
+
+  body {
+
+    @apply text-white antialiased;
+
+    background-image: var(--bg-main);
+
+    min-height: 100vh;
+  }
+}
