@@ -19,7 +19,7 @@ export function Navbar({isAuthenticated}: {isAuthenticated: boolean}) {
       {/* <button className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold hover:bg-purple-500">
         Start Now
       </button> */}
-      {isAuthenticated ? null : (
+      {isAuthenticated ? <p>hello</p> : (
         <div className="flex gap-4">
         <Link href="/sign-in" className="underline">
           Sign In
