@@ -1,13 +1,16 @@
+import Features from "@/components/marketing/Features";
+import Pricing from "@/components/marketing/Pricing";
 import { Navbar } from "@/components/navbar";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function HomePage() {
-  const { isAuthenticated } = await auth()
-  
-    if (isAuthenticated) {
-      redirect("/dashboard");
-    }
+  const { isAuthenticated } = await auth();
+
+  if (isAuthenticated) {
+    redirect("/dashboard");
+  }
   return (
     <>
       <Navbar isAuthenticated={isAuthenticated} />
@@ -27,8 +30,8 @@ export default async function HomePage() {
 
         {/* Subtitle */}
         <p className="mx-auto mt-6 max-w-2xl text-lg text-white/70">
-          Paste a job description and instantly get interview questions
-          and quizzes tailored to the role.
+          Paste a job description and instantly get interview questions and
+          quizzes tailored to the role.
         </p>
 
         {/* Textarea */}
@@ -38,10 +41,14 @@ export default async function HomePage() {
             className="min-h-40 w-full rounded-xl border border-white/10 bg-black/40 p-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
 
-          <button className="mt-4 w-full rounded-xl bg-purple-600 py-3 font-semibold hover:bg-purple-500">
-            Generate Questions
-          </button>
+          <Link href="/questions">
+            <button className="mt-4 w-full rounded-xl bg-purple-600 py-3 font-semibold hover:bg-purple-500">
+              Generate Questions
+            </button>
+          </Link>
         </div>
+        <Features />
+        <Pricing />
       </main>
     </>
   );

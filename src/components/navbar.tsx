@@ -1,10 +1,10 @@
 import Link from "next/link";
+import { SignOutButton } from "@clerk/nextjs";
 
-export function Navbar({isAuthenticated}: {isAuthenticated: boolean}) {
+export function Navbar({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <header className="flex items-center justify-between px-6 py-4">
-
-        <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
+      <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
         <a href="#features" className="hover:text-white">
           Features
         </a>
@@ -14,22 +14,22 @@ export function Navbar({isAuthenticated}: {isAuthenticated: boolean}) {
       </nav>
       <div className="font-bold text-lg">InterviewReady</div>
 
-      
-
-      {/* <button className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold hover:bg-purple-500">
-        Start Now
-      </button> */}
-      {isAuthenticated ? <p>hello</p> : (
+      {isAuthenticated ? (
+        <SignOutButton>
+          <button className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold hover:bg-purple-500">
+            Sign Out
+          </button>
+        </SignOutButton>
+      ) : (
         <div className="flex gap-4">
-        <Link href="/sign-in" className="underline">
-          Sign In
-        </Link>
-        <Link href="/sign-up" className="underline">
-          Sign Up
-        </Link>
-      </div>
+          <Link href="/sign-in" className="underline">
+            Sign In
+          </Link>
+          <Link href="/sign-up" className="underline">
+            Sign Up
+          </Link>
+        </div>
       )}
-      
     </header>
   );
 }
