@@ -1,8 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { openai } from "@/lib/ai/client";
 import { interviewQuestionsPrompt } from "@/lib/ai/prompts";
+import { getAuth } from "@clerk/nextjs/server";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const { userId } = getAuth(req);
+
+  console.log("######################### user:", userId)
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthorized" },  
+      { status: 401 }
+    );
+  }
+
   const { jobDescription } = await req.json();
 
   if (!jobDescription || jobDescription.length < 30) {
@@ -32,8 +44,6 @@ export async function POST(req: Request) {
   if (raw) {
     raw = raw.replace(/```json|```/g, "").trim();
   }
-
-  console.log("raw", raw);
 
   return NextResponse.json({
     questions: JSON.parse(raw ?? "[]"),

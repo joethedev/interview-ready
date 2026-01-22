@@ -1,35 +1,22 @@
+"use client";
+
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
 
-export function Navbar({ isAuthenticated }: { isAuthenticated: boolean }) {
+export function Navbar() {
   return (
-    <header className="flex items-center justify-between px-6 py-4">
-      <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
-        <a href="#features" className="hover:text-white">
-          Features
-        </a>
-        <a href="#pricing" className="hover:text-white">
-          Pricing
-        </a>
-      </nav>
-      <div className="font-bold text-lg">InterviewReady</div>
+    <nav className="flex justify-between items-center py-4">
+      <Link href="/" className="font-bold text-xl">
+        MyCV AI
+      </Link>
 
-      {isAuthenticated ? (
-        <SignOutButton>
-          <button className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold hover:bg-purple-500">
-            Sign Out
-          </button>
-        </SignOutButton>
-      ) : (
-        <div className="flex gap-4">
-          <Link href="/sign-in" className="underline">
-            Sign In
-          </Link>
-          <Link href="/sign-up" className="underline">
-            Sign Up
-          </Link>
-        </div>
-      )}
-    </header>
+      <SignedOut>
+        <Link href="/sign-in">Sign in</Link>
+      </SignedOut>
+
+      <SignedIn>
+        <UserButton afterSignOutUrl="/" />
+      </SignedIn>
+    </nav>
   );
 }
