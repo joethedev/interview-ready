@@ -10,9 +10,7 @@ import { redirect } from "next/navigation";
 
 const Index = async () => {
   const user = await currentUser()
-  console.log(user)
   if (user) {
-    console.log("Bonjouur!!");
     redirect("/dashboard");
   }
 

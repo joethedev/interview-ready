@@ -6,9 +6,13 @@ type Props = {
 };
 
 export default function QuestionList({ questions }: Props) {
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mt-10 space-y-6">
-      {questions && questions.map((q, index) => (
+      {questions.map((q, index) => (
         <div key={index} className="w-full">
           <QuestionCard
             question={q.question}

@@ -42,6 +42,9 @@ Generate exactly 5 interview questions based on the skills in the job descriptio
 Each question MUST be multiple-choice.
 
 STRICT RULES:
+- You ONLY generate questions for IT / software engineering roles.
+If the role is not IT-related, return:
+{ "error": "NOT_IT_ROLE" }
 - NEVER ask questions about the job description itself.
 - Return VALID JSON ONLY
 - No markdown
