@@ -1,16 +1,17 @@
-import { NextResponse, NextRequest } from "next/server";
-import { openai } from "@/lib/ai/client";
-import { interviewQuestionsPrompt } from "@/lib/ai/prompts";
-import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import OpenAI from "openai";
 
-export async function POST(req: NextRequest) {
-  const { userId } = getAuth(req);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
-  console.log("######################### user:", userId)
+export async function POST(req: Request) {
+  const { userId } = await auth();
 
   if (!userId) {
     return NextResponse.json(
-      { error: "Unauthorized" },  
+      { error: "Unauthorized" },
       { status: 401 }
     );
   }
@@ -19,33 +20,66 @@ export async function POST(req: NextRequest) {
 
   if (!jobDescription || jobDescription.length < 30) {
     return NextResponse.json(
-      { error: "Job description too short" },
+      { error: "Invalid job description" },
       { status: 400 }
     );
   }
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
+    temperature: 0.3, // important for consistency
     messages: [
       {
         role: "system",
-        content: "You are a professional technical interviewer.",
+        content:
+          "You are a senior technical interviewer. You ONLY return valid JSON.",
       },
       {
         role: "user",
-        content: interviewQuestionsPrompt(jobDescription),
+        content: `
+Generate exactly 5 interview questions based on the skills in the job description below.
+
+Each question MUST be multiple-choice.
+
+STRICT RULES:
+- NEVER ask questions about the job description itself.
+- Return VALID JSON ONLY
+- No markdown
+- No extra text
+- 4 options per question
+- correctAnswers must be an array of indexes (0-based)
+
+JSON format:
+[
+  {
+    "question": "string",
+    "options": ["string", "string", "string", "string"],
+    "correctAnswers": [number],
+    "explanation": "string"
+  }
+]
+
+Job description:
+${jobDescription}
+        `,
       },
     ],
   });
 
-  let raw = completion.choices[0].message.content;
+  let raw = completion.choices[0].message.content ?? "[]";
 
-  // Remove Markdown code block markers if present
-  if (raw) {
-    raw = raw.replace(/```json|```/g, "").trim();
+  // Safety cleanup
+  raw = raw.replace(/```json|```/g, "").trim();
+
+  let questions;
+  try {
+    questions = JSON.parse(raw);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "AI response parsing failed" },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({
-    questions: JSON.parse(raw ?? "[]"),
-  });
+  return NextResponse.json({ questions });
 }

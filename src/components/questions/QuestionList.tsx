@@ -7,13 +7,16 @@ type Props = {
 
 export default function QuestionList({ questions }: Props) {
   return (
-    <div className="mt-10 grid gap-6 md:grid-cols-2">
+    <div className="mt-10 space-y-6">
       {questions && questions.map((q, index) => (
-        <QuestionCard
-          key={index}
-          question={q.question}
-          answer={q.answer}
-        />
+        <div key={index} className="w-full">
+          <QuestionCard
+            question={q.question}
+            options={q.options}
+            correctAnswers={q.correctAnswers}
+            explanation={q.explanation}
+          />
+        </div>
       ))}
     </div>
   );
