@@ -78,6 +78,7 @@ const Dashboard = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saveQuestions, setSaveQuestions] = useState(false);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +103,7 @@ const Dashboard = () => {
       const response = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobDescription }),
+        body: JSON.stringify({ jobDescription, saveQuestions }),
       });
 
       const data = await response.json();
@@ -185,10 +186,27 @@ const Dashboard = () => {
                   />
                   {error && (
                     <div className="mt-2 flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                       <p className="text-sm text-destructive">{error}</p>
                     </div>
                   )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="saveQuestions"
+                    checked={saveQuestions}
+                    onChange={(e) => setSaveQuestions(e.target.checked)}
+                    disabled={isLoading}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
+                  />
+                  <label
+                    htmlFor="saveQuestions"
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    Save questions for 30 days
+                  </label>
                 </div>
 
                 <Button

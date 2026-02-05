@@ -1,33 +1,49 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
+import { saveQuestionSet } from "@/lib/supabase/server";
+
+import {
+  GenerateQuestionsSchema,
+  QuestionsArraySchema,
+} from "@/dto/question-set.schema";
+
+import type {
+  GenerateQuestionsDTO,
+  GenerateQuestionsResponseDTO,
+} from "@/dto/question-set.dto";
+import z from "zod";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
 export async function POST(req: Request) {
+  // 1️⃣ Auth
   const { userId } = await auth();
-
   if (!userId) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { jobDescription } = await req.json();
-
-  if (!jobDescription || jobDescription.length < 30) {
+  // 2️⃣ Validate request body
+  let body: GenerateQuestionsDTO & { saveQuestions?: boolean };
+  try {
+    body = GenerateQuestionsSchema.extend({
+      saveQuestions: z.boolean().optional(),
+    }).parse(await req.json());
+  } catch {
     return NextResponse.json(
-      { error: "Invalid job description" },
+      { error: "Invalid request payload" },
       { status: 400 }
     );
   }
 
+  const { jobDescription, saveQuestions } = body;
+
+  // 3️⃣ Call OpenAI
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
-    temperature: 0.3, // important for consistency
+    temperature: 0.3,
     messages: [
       {
         role: "system",
@@ -37,7 +53,7 @@ export async function POST(req: Request) {
       {
         role: "user",
         content: `
-Generate exactly 5 interview questions based on the skills in the job description below.
+Generate exactly 10 interview questions based on the skills in the job description below.
 
 Each question MUST be multiple-choice.
 
@@ -61,7 +77,6 @@ JSON format:
     "explanation": "string"
   }
 ]
-
 Job description:
 ${jobDescription}
         `,
@@ -69,20 +84,54 @@ ${jobDescription}
     ],
   });
 
-  let raw = completion.choices[0].message.content ?? "[]";
+  let raw = completion.choices[0].message.content ?? "";
 
-  // Safety cleanup
   raw = raw.replace(/```json|```/g, "").trim();
 
+  // 4️⃣ Handle NOT_IT_ROLE explicitly
+  if (raw.includes("NOT_IT_ROLE")) {
+    return NextResponse.json(
+      { error: "NOT_IT_ROLE" },
+      { status: 400 }
+    );
+  }
+
+  // 5️⃣ Parse AI JSON
   let questions;
   try {
     questions = JSON.parse(raw);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "AI response parsing failed" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ questions });
+  // 6️⃣ Validate AI output with Zod
+  const validation = QuestionsArraySchema.safeParse(questions);
+
+  if (!validation.success) {
+    console.error(validation.error);
+    return NextResponse.json(
+      { error: "AI returned invalid structure" },
+      { status: 500 }
+    );
+  }
+
+  // 7️⃣ Save to database if requested
+  if (saveQuestions) {
+    try {
+      await saveQuestionSet(userId, jobDescription, validation.data, false);
+    } catch (error) {
+      console.error("Failed to save questions:", error);
+      // Continue even if save fails - user still gets the questions
+    }
+  }
+
+  // 8️⃣ Final typed response
+  const response: GenerateQuestionsResponseDTO = {
+    questions: validation.data,
+  };
+
+  return NextResponse.json(response);
 }
