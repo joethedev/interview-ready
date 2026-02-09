@@ -124,6 +124,10 @@ const Dashboard = () => {
       // Only navigate if we have valid questions
       if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
         sessionStorage.setItem("questions", JSON.stringify(data.questions));
+        if (data.saved && data.questionSetId) {
+          sessionStorage.setItem("questionSetId", data.questionSetId);
+          sessionStorage.setItem("questionsSaved", "true");
+        }
         router.push("/questions");
       } else {
         setError("No questions were generated. Please try again.");

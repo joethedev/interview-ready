@@ -119,9 +119,14 @@ ${jobDescription}
   }
 
   // 7️⃣ Save to database if requested
+  let saved = false;
+  let questionSetId: string | undefined;
+
   if (saveQuestions) {
     try {
-      await saveQuestionSet(userId, jobDescription, validation.data, false);
+      const result = await saveQuestionSet(userId, jobDescription, validation.data, false);
+      saved = true;
+      questionSetId = result.id;
     } catch (error) {
       console.error("Failed to save questions:", error);
       // Continue even if save fails - user still gets the questions
@@ -131,6 +136,8 @@ ${jobDescription}
   // 8️⃣ Final typed response
   const response: GenerateQuestionsResponseDTO = {
     questions: validation.data,
+    saved,
+    questionSetId,
   };
 
   return NextResponse.json(response);
