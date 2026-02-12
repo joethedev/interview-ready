@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import ExampleSection from "@/components/ExampleSection";
@@ -16,7 +15,6 @@ const Index = async () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <main>
         <HeroSection />
         <HowItWorksSection />

@@ -1,6 +1,5 @@
 import { getPublicQuestionSets } from "@/lib/supabase/server";
 import FeedCard from "@/components/feed/FeedCard";
-import Header from "@/components/Header";
 import { Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +9,6 @@ export default async function FeedPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container py-24">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>

@@ -5,34 +5,42 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   const pathname = req.nextUrl.pathname;
 
+  console.log("🟡 Proxy middleware:", pathname, "userId:", userId ? "✅ Authenticated" : "❌ Not authenticated");
+
   // 1️⃣ Always allow auth routes
   if (
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/sign-up")
   ) {
+    console.log("🟡 Allowing auth route:", pathname);
     return NextResponse.next();
   }
 
   // 2️⃣ NEVER protect API routes (including webhooks)
   if (pathname.startsWith("/api")) {
+    console.log("🟡 Allowing API route:", pathname);
     return NextResponse.next();
   }
 
-  // 3️⃣ Protect only pages that need it
-  if (pathname.startsWith("/questions") && !userId) {
-    return NextResponse.redirect(
-      new URL("/sign-in", req.url)
-    );
+  // 3️⃣ Protect pages that need authentication
+  const protectedPaths = ["/dashboard", "/questions", "/feed"];
+  const isProtectedPath = protectedPaths.some((path) =>
+    pathname.startsWith(path)
+  );
+
+  if (isProtectedPath && !userId) {
+    console.log("🔴 Redirecting to /sign-in - protected path without auth:", pathname);
+    const signInUrl = new URL("/sign-in", req.url);
+    signInUrl.searchParams.set("redirect_url", pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
+  console.log("🟡 Allowing:", pathname);
   return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-     // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    "/((?!_next|.*\\..*).*)",
   ],
 };

@@ -208,3 +208,17 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* Breathing animation for skeletons */
+@keyframes breathing {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-breathing {
+  animation: breathing 2s ease-in-out infinite;
+}
