@@ -3,6 +3,9 @@ import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import { saveQuestionSet } from "@/lib/supabase/server";
 
+// Increase timeout for AI generation
+export const maxDuration = 30; // seconds
+
 import {
   GenerateQuestionsSchema,
   QuestionsArraySchema,
@@ -21,6 +24,8 @@ const openai = new OpenAI({
 export async function POST(req: Request) {
   // 1️⃣ Auth
   const { userId } = await auth();
+
+  console.log("userId*******************:", userId)
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -44,6 +49,7 @@ export async function POST(req: Request) {
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.3,
+    max_tokens: 1000, // Limit response size for faster generation
     messages: [
       {
         role: "system",
@@ -53,7 +59,7 @@ export async function POST(req: Request) {
       {
         role: "user",
         content: `
-Generate exactly 10 interview questions based on the skills in the job description below.
+Generate exactly 5 interview questions based on the skills in the job description below.
 
 Each question MUST be multiple-choice.
 

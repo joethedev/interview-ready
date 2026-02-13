@@ -1,5 +1,6 @@
 import "@/styles/globals.css"
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from '@clerk/themes'
 import Header from "@/components/Header";
 
 export default function RootLayout({
@@ -8,7 +9,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={{ theme: dark }}>
     <html lang="en">
       <body>
         <Header />

@@ -38,47 +38,50 @@ export default function FeedCard({ data }: FeedCardProps) {
 
   return (
     <div 
-      className="group relative flex flex-col justify-between rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-glow hover:border-primary/50 cursor-pointer"
+      className="group relative flex flex-col justify-between rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-xl p-6 shadow-xl shadow-emerald-500/5 transition-all hover:shadow-emerald-500/20 hover:border-emerald-500/40 cursor-pointer overflow-hidden"
       onClick={handlePractice}
     >
-      <div>
+      {/* Hover glow effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/5 group-hover:to-teal-500/5 transition-all duration-500" />
+      
+      <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
             <Clock className="w-3 h-3" />
             <span>{formatDistanceToNow(new Date(createdAt), { addSuffix: true })}</span>
           </div>
-          <Badge variant="secondary" className="text-xs font-normal">
+          <Badge variant="secondary" className="text-xs font-normal bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
             Public
           </Badge>
         </div>
 
-        <h3 className="text-lg font-semibold text-foreground mb-3 line-clamp-2 leading-tight">
+        <h3 className="text-lg font-semibold text-white mb-3 line-clamp-2 leading-tight">
           {title}
         </h3>
 
         <div className="flex flex-wrap gap-2 mb-6">
           {tags.length > 0 ? (
             tags.map(tag => (
-              <span key={tag} className="inline-flex items-center px-2 py-1 rounded bg-secondary text-[10px] font-medium text-secondary-foreground">
+              <span key={tag} className="inline-flex items-center px-2 py-1 rounded bg-gray-800/50 border border-gray-700/50 text-[10px] font-medium text-emerald-300">
                 {tag}
               </span>
             ))
           ) : (
-            <span className="inline-flex items-center px-2 py-1 rounded bg-secondary text-[10px] font-medium text-secondary-foreground">
+            <span className="inline-flex items-center px-2 py-1 rounded bg-gray-800/50 border border-gray-700/50 text-[10px] font-medium text-emerald-300">
               General
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-700/50 mt-auto relative z-10">
+        <div className="flex items-center gap-2 text-sm text-gray-400">
           <Layers className="w-4 h-4" />
           <span>{questionCount} Questions</span>
         </div>
         
         <button 
-          className="flex items-center gap-2 text-sm font-medium text-primary opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0"
+          className="flex items-center gap-2 text-sm font-medium text-emerald-400 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0"
         >
           Practice <ArrowRight className="w-4 h-4" />
         </button>
