@@ -26,9 +26,9 @@ export default function Page() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-b from-gray-950 via-gray-900 to-black relative overflow-hidden">
       {/* Background Effects */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
       <div className="fixed inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
       
       {/* Animated gradient orbs */}
@@ -51,10 +51,10 @@ export default function Page() {
                   return (
                     <div 
                       key={benefit.title}
-                      className="flex gap-3 p-5 rounded-2xl bg-gradient-to-br from-gray-900/50 to-gray-800/50 border border-emerald-500/20 backdrop-blur-sm hover:border-emerald-500/40 transition-all duration-300 group"
+                      className="flex gap-3 p-5 rounded-2xl bg-linear-to-br from-gray-900/50 to-gray-800/50 border border-emerald-500/20 backdrop-blur-sm hover:border-emerald-500/40 transition-all duration-300 group"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
-                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="shrink-0 w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <Icon className="w-6 h-6 text-emerald-400" />
                       </div>
                       <div>
@@ -76,7 +76,7 @@ export default function Page() {
                   {[...Array(4)].map((_, i) => (
                     <div
                       key={i}
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-400 border-2 border-gray-900 flex items-center justify-center text-white font-semibold"
+                      className="w-10 h-10 rounded-full bg-linear-to-br from-emerald-400 to-teal-400 border-2 border-gray-900 flex items-center justify-center text-white font-semibold"
                     >
                       {String.fromCharCode(65 + i)}
                     </div>
@@ -101,7 +101,7 @@ export default function Page() {
                 {/* Mobile Logo */}
                 <div className="lg:hidden mb-8 text-center">
                   <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                       <span className="text-white font-bold text-lg">IR</span>
                     </div>
                     <h1 className="text-2xl font-bold text-white">InterviewReady</h1>

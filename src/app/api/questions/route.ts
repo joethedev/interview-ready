@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
-import { saveQuestionSet } from "@/lib/supabase/server";
 
 // Increase timeout for AI generation
 export const maxDuration = 30; // seconds
@@ -15,7 +14,6 @@ import type {
   GenerateQuestionsDTO,
   GenerateQuestionsResponseDTO,
 } from "@/dto/question-set.dto";
-import z from "zod";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -31,11 +29,9 @@ export async function POST(req: Request) {
   }
 
   // 2️⃣ Validate request body
-  let body: GenerateQuestionsDTO & { saveQuestions?: boolean };
+  let body: GenerateQuestionsDTO;
   try {
-    body = GenerateQuestionsSchema.extend({
-      saveQuestions: z.boolean().optional(),
-    }).parse(await req.json());
+    body = GenerateQuestionsSchema.parse(await req.json());
   } catch {
     return NextResponse.json(
       { error: "Invalid request payload" },
@@ -43,7 +39,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { jobDescription, saveQuestions } = body;
+  const { jobDescription } = body;
 
   // 3️⃣ Call OpenAI
   const completion = await openai.chat.completions.create({
@@ -124,26 +120,9 @@ ${jobDescription}
     );
   }
 
-  // 7️⃣ Save to database if requested
-  let saved = false;
-  let questionSetId: string | undefined;
-
-  if (saveQuestions) {
-    try {
-      const result = await saveQuestionSet(userId, jobDescription, validation.data, false);
-      saved = true;
-      questionSetId = result.id;
-    } catch (error) {
-      console.error("Failed to save questions:", error);
-      // Continue even if save fails - user still gets the questions
-    }
-  }
-
-  // 8️⃣ Final typed response
+  // 7️⃣ Return questions
   const response: GenerateQuestionsResponseDTO = {
     questions: validation.data,
-    saved,
-    questionSetId,
   };
 
   return NextResponse.json(response);

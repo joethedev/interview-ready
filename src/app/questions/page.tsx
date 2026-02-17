@@ -30,6 +30,9 @@ export default function QuestionsPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
+  const [questionSetId, setQuestionSetId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -52,6 +55,9 @@ export default function QuestionsPage() {
           return;
         }
 
+        // Store job description for later use
+        setJobDescription(jobDescription);
+
         // Simulate progress while waiting
         const progressInterval = setInterval(() => {
           setLoadingProgress(prev => Math.min(prev + 5, 95));
@@ -61,7 +67,7 @@ export default function QuestionsPage() {
           const response = await fetch("/api/questions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jobDescription, saveQuestions }),
+            body: JSON.stringify({ jobDescription }),
           });
 
           clearInterval(progressInterval);
@@ -83,11 +89,35 @@ export default function QuestionsPage() {
 
           if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
             sessionStorage.setItem("questions", JSON.stringify(data.questions));
-            if (data.saved && data.questionSetId) {
-              sessionStorage.setItem("questionSetId", data.questionSetId);
-              sessionStorage.setItem("questionsSaved", "true");
-            }
             setQuestions(data.questions);
+            
+            // Auto-save if user requested it
+            if (saveQuestions) {
+              try {
+                const saveResponse = await fetch("/api/questions/save", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    jobDescription,
+                    questions: data.questions,
+                    isPublic: false,
+                  }),
+                });
+
+                const saveData = await saveResponse.json();
+
+                if (saveResponse.ok && !saveData.error) {
+                  sessionStorage.setItem("questionSetId", saveData.questionSetId);
+                  sessionStorage.setItem("questionsSaved", "true");
+                  setIsSaved(true);
+                  setQuestionSetId(saveData.questionSetId);
+                  console.log("✅ Questions auto-saved:", saveData.questionSetId);
+                }
+              } catch (saveError) {
+                console.error("Failed to auto-save questions:", saveError);
+                // Don't show error to user - they can manually save later
+              }
+            }
           } else {
             setError("No questions were generated. Please try again.");
           }
@@ -102,9 +132,21 @@ export default function QuestionsPage() {
       } else {
         // Load existing questions
         const stored = sessionStorage.getItem("questions");
+        const storedJobDesc = sessionStorage.getItem("pendingJobDescription");
+        const storedQuestionSetId = sessionStorage.getItem("questionSetId");
+        const questionsSaved = sessionStorage.getItem("questionsSaved") === "true";
+        
         if (stored) {
           setQuestions(JSON.parse(stored));
         }
+        if (storedJobDesc) {
+          setJobDescription(storedJobDesc);
+        }
+        if (questionsSaved && storedQuestionSetId) {
+          setIsSaved(true);
+          setQuestionSetId(storedQuestionSetId);
+        }
+        
         setIsLoading(false);
       }
     };
@@ -113,34 +155,146 @@ export default function QuestionsPage() {
   }, []);
 
   const handleDownload = () => {
-    const dataStr = JSON.stringify(questions, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = 'interview-questions.json';
+    // Helper function to escape CSV fields
+    const escapeCsvField = (field: string): string => {
+      // If field contains comma, quote, or newline, wrap in quotes and escape quotes
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    };
+
+    // Create CSV header
+    const headers = ['Question', 'Options', 'Correct Answer(s)', 'Explanation'];
+    const csvRows = [headers.join(',')];
+
+    // Convert each question to CSV row
+    questions.forEach((q, index) => {
+      // Format options as numbered list
+      const optionsText = q.options
+        .map((opt, idx) => `${idx + 1}. ${opt}`)
+        .join('; ');
+
+      // Get correct answer text(s)
+      const correctAnswersText = q.correctAnswers
+        .map(idx => q.options[idx])
+        .join('; ');
+
+      const row = [
+        escapeCsvField(q.question),
+        escapeCsvField(optionsText),
+        escapeCsvField(correctAnswersText),
+        escapeCsvField(q.explanation)
+      ];
+
+      csvRows.push(row.join(','));
+    });
+
+    // Join all rows with newline
+    const csvContent = csvRows.join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.setAttribute('href', url);
+    linkElement.setAttribute('download', 'interview-questions.csv');
     linkElement.click();
+    URL.revokeObjectURL(url);
   };
 
-  const handleSaveQuestions = () => {
-    setIsSaved(!isSaved);
-    // In real app, this would call an API to save questions
-    console.log("Save questions:", !isSaved);
-  };
-
-  const handleMakePublic = () => {
+  const handleSaveQuestions = async () => {
     if (isSaved) {
-      setIsPublic(!isPublic);
-      // In real app, this would call an API to make questions public
-      console.log("Make public:", !isPublic);
+      // If already saved, just toggle the UI state (unsaving not implemented)
+      return;
+    }
+
+    if (!jobDescription) {
+      setError("No job description found. Cannot save questions.");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/questions/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobDescription,
+          questions,
+          isPublic: false,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        setError(data.error || "Failed to save questions");
+        return;
+      }
+
+      // Update state
+      setIsSaved(true);
+      setQuestionSetId(data.questionSetId);
+      
+      // Update session storage
+      sessionStorage.setItem("questionsSaved", "true");
+      sessionStorage.setItem("questionSetId", data.questionSetId);
+
+      console.log("✅ Questions saved successfully:", data.questionSetId);
+    } catch (err) {
+      console.error("Failed to save questions:", err);
+      setError("Failed to save questions. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleMakePublic = async () => {
+    if (!isSaved || !questionSetId) {
+      setError("Questions must be saved before making them public");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const newIsPublic = !isPublic;
+      
+      const response = await fetch(`/api/questions/${questionSetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isPublic: newIsPublic,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        setError(data.error || "Failed to update question visibility");
+        return;
+      }
+
+      // Update state
+      setIsPublic(newIsPublic);
+      console.log(`✅ Questions made ${newIsPublic ? 'public' : 'private'}`);
+    } catch (err) {
+      console.error("Failed to update question visibility:", err);
+      setError("Failed to update question visibility. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // Loading state with simple progress bar
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black flex items-center justify-center relative">
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
+      <div className="min-h-screen bg-linear-to-b from-gray-950 via-gray-900 to-black flex items-center justify-center relative">
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-md w-full mx-4 relative z-10">
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]">
@@ -168,8 +322,8 @@ export default function QuestionsPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black relative">
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/20 via-transparent to-transparent pointer-events-none" />
+      <div className="min-h-screen bg-linear-to-b from-gray-950 via-gray-900 to-black relative">
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-red-900/20 via-transparent to-transparent pointer-events-none" />
         <main className="mx-auto max-w-5xl px-4 md:px-6 pt-24 relative z-10">
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
@@ -186,7 +340,7 @@ export default function QuestionsPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
               </Button>
-              <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white">
+              <Button onClick={() => window.location.reload()} className="bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white">
                 Try Again
               </Button>
             </div>
@@ -199,8 +353,8 @@ export default function QuestionsPage() {
   // Empty state
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black relative">
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
+      <div className="min-h-screen bg-linear-to-b from-gray-950 via-gray-900 to-black relative">
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
         <main className="mx-auto max-w-5xl px-4 md:px-6 pt-24 relative z-10">
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
@@ -212,7 +366,7 @@ export default function QuestionsPage() {
             <p className="text-gray-300 mb-8 max-w-md mx-auto">
               Go back to the dashboard to generate interview questions tailored to your target role
             </p>
-            <Button onClick={() => router.push("/dashboard")} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white">
+            <Button onClick={() => router.push("/dashboard")} className="bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
@@ -223,8 +377,8 @@ export default function QuestionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black relative">
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
+    <div className="min-h-screen bg-linear-to-b from-gray-950 via-gray-900 to-black relative">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
       <div className="fixed inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
       
       <main className="mx-auto max-w-5xl px-4 md:px-6 pt-24 pb-12 relative z-10">
@@ -267,13 +421,14 @@ export default function QuestionsPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleSaveQuestions}
+                disabled={isSaving || isSaved}
                 className={isSaved 
                   ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" 
                   : "border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-emerald-500/50"
                 }
               >
                 <Bookmark className="mr-2 h-4 w-4" />
-                {isSaved ? 'Saved' : 'Save Questions'}
+                {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save Questions'}
               </Button>
               
               {isSaved && (
@@ -281,6 +436,7 @@ export default function QuestionsPage() {
                   variant="outline" 
                   size="sm" 
                   onClick={handleMakePublic}
+                  disabled={isSaving}
                   className={isPublic 
                     ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" 
                     : "border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-emerald-500/50"

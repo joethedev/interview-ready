@@ -17,7 +17,6 @@ export type QuestionDTO = {
  */
 export type GenerateQuestionsDTO = {
   jobDescription: string;
-  saveQuestions?: boolean;
 };
 
 /**
