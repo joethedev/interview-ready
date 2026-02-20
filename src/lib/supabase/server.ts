@@ -8,7 +8,8 @@ export const supabase = createClient(
 
 export async function saveQuestionSet(
   userId: string,
-  jobDescription: string,
+  jobTitle: string,
+  summarizedJobDescription: string,
   questions: Question[],
   isPublic: boolean = false
 ): Promise<{ id: string; createdAt: string; expiresAt: string }> {
@@ -20,7 +21,8 @@ export async function saveQuestionSet(
     .from("question_sets")
     .insert({
       user_id: userId,
-      job_description: jobDescription,
+      job_title: jobTitle,
+      job_description: summarizedJobDescription,
       questions: questions,
       is_public: isPublic,
       expires_at: expiresAt.toISOString(),
@@ -95,7 +97,7 @@ export async function getQuestionSetById(id: string, userId: string) {
 export async function getPublicQuestionSets() {
   const { data, error } = await supabase
     .from("question_sets")
-    .select("id, job_description, questions, created_at")
+    .select("id, job_description, job_title, questions, created_at")
     .eq("is_public", true)
     // Filter out expired ones
     .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
@@ -110,6 +112,7 @@ export async function getPublicQuestionSets() {
   return data.map((row) => ({
     id: row.id,
     jobDescription: row.job_description,
+    jobTitle: row.job_title,
     questions: row.questions,
     createdAt: row.created_at,
   }));

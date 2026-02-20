@@ -5,7 +5,8 @@ import { QuestionsArraySchema } from "@/dto/question-set.schema";
 import z from "zod";
 
 const SaveQuestionsSchema = z.object({
-  jobDescription: z.string().min(1),
+  jobTitle: z.string().min(1),
+  summarizedJobDescription: z.string().min(1),
   questions: QuestionsArraySchema,
   isPublic: z.boolean().optional().default(false),
 });
@@ -29,13 +30,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const { jobDescription, questions, isPublic } = body;
+  const { jobTitle, summarizedJobDescription, questions, isPublic } = body;
 
   // 3️⃣ Save to database
   try {
     const result = await saveQuestionSet(
       userId,
-      jobDescription,
+      jobTitle,
+      summarizedJobDescription,
       questions,
       isPublic
     );

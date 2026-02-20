@@ -9,6 +9,7 @@ type FeedCardProps = {
   data: {
     id: string;
     jobDescription: string;
+    jobTitle?: string;
     questions: any[]; // Using any to match JSONB return, ideally typed
     createdAt: string;
   };
@@ -16,11 +17,12 @@ type FeedCardProps = {
 
 export default function FeedCard({ data }: FeedCardProps) {
   const router = useRouter();
-  const { jobDescription, questions, createdAt } = data;
+  const { jobDescription, jobTitle, questions, createdAt } = data;
   
-  // Create a title from the first line or a slice of the job description
+  // Use job_title if available, otherwise create a title from the first line of job description
   const firstLine = jobDescription.split("\n")[0].trim();
-  const title = firstLine.length > 60 ? firstLine.slice(0, 60) + "..." : firstLine;
+  const fallbackTitle = firstLine.length > 60 ? firstLine.slice(0, 60) + "..." : firstLine;
+  const title = jobTitle || fallbackTitle;
   const questionCount = Array.isArray(questions) ? questions.length : 0;
   
   // Generate tech stack tags based on common keywords

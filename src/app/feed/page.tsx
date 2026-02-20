@@ -8,8 +8,8 @@ export default async function FeedPage() {
   const questions = await getPublicQuestionSets();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black relative">
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
+    <div className="min-h-screen bg-linear-to-b from-gray-950 via-gray-900 to-black relative">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent pointer-events-none" />
       <div className="fixed inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
       
       <main className="container max-w-7xl mx-auto px-4 md:px-6 py-24 relative z-10">
@@ -23,7 +23,7 @@ export default async function FeedPage() {
               Community Feed
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 bg-linear-to-r from-white to-gray-300 bg-clip-text">
             Explore Interview Questions
           </h1>
           <p className="text-gray-400 text-lg leading-relaxed">

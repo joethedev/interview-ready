@@ -17,6 +17,15 @@ export const QuestionSchema = z.object({
 export const QuestionsArraySchema = z.array(QuestionSchema);
 
 /**
+ * AI response schema with job title and summarized job description
+ */
+export const AIResponseSchema = z.object({
+  jobTitle: z.string(),
+  summarizedJobDescription: z.string(),
+  questions: z.array(QuestionSchema),
+});
+
+/**
  * Request body when generating questions
  */
 export const GenerateQuestionsSchema = z.object({

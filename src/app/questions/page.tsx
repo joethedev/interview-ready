@@ -31,8 +31,25 @@ export default function QuestionsPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
+  const [summarizedJobDescription, setSummarizedJobDescription] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [questionSetId, setQuestionSetId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [motivationalIndex, setMotivationalIndex] = useState(0);
+
+  // Motivational messages for loading state
+  const motivationalMessages = [
+    "Preparation is the key to success...",
+    "Every expert was once a beginner...",
+    "Your dream job is within reach...",
+    "Practice makes perfect...",
+    "Confidence comes from preparation...",
+    "You're one step closer to your goal...",
+    "Great opportunities are ahead...",
+    "Invest in yourself, it pays the best interest...",
+    "Success is where preparation meets opportunity...",
+    "Your future starts with this moment...",
+  ];
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -91,6 +108,16 @@ export default function QuestionsPage() {
             sessionStorage.setItem("questions", JSON.stringify(data.questions));
             setQuestions(data.questions);
             
+            // Store job title and summarized description if provided
+            if (data.jobTitle) {
+              sessionStorage.setItem("jobTitle", data.jobTitle);
+              setJobTitle(data.jobTitle);
+            }
+            if (data.summarizedJobDescription) {
+              sessionStorage.setItem("summarizedJobDescription", data.summarizedJobDescription);
+              setSummarizedJobDescription(data.summarizedJobDescription);
+            }
+            
             // Auto-save if user requested it
             if (saveQuestions) {
               try {
@@ -98,7 +125,8 @@ export default function QuestionsPage() {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    jobDescription,
+                    jobTitle: data.jobTitle ?? "Software Engineer",
+                    summarizedJobDescription: data.summarizedJobDescription ?? jobDescription,
                     questions: data.questions,
                     isPublic: false,
                   }),
@@ -133,6 +161,7 @@ export default function QuestionsPage() {
         // Load existing questions
         const stored = sessionStorage.getItem("questions");
         const storedJobDesc = sessionStorage.getItem("pendingJobDescription");
+        const storedJobTitle = sessionStorage.getItem("jobTitle");
         const storedQuestionSetId = sessionStorage.getItem("questionSetId");
         const questionsSaved = sessionStorage.getItem("questionsSaved") === "true";
         
@@ -141,6 +170,13 @@ export default function QuestionsPage() {
         }
         if (storedJobDesc) {
           setJobDescription(storedJobDesc);
+        }
+        const storedSummarizedJobDesc = sessionStorage.getItem("summarizedJobDescription");
+        if (storedSummarizedJobDesc) {
+          setSummarizedJobDescription(storedSummarizedJobDesc);
+        }
+        if (storedJobTitle) {
+          setJobTitle(storedJobTitle);
         }
         if (questionsSaved && storedQuestionSetId) {
           setIsSaved(true);
@@ -153,6 +189,17 @@ export default function QuestionsPage() {
 
     loadQuestions();
   }, []);
+
+  // Cycle through motivational messages during loading
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const messageInterval = setInterval(() => {
+      setMotivationalIndex((prev) => (prev + 1) % motivationalMessages.length);
+    }, 2000); 
+
+    return () => clearInterval(messageInterval);
+  }, [isLoading, motivationalMessages.length]);
 
   const handleDownload = () => {
     // Helper function to escape CSV fields
@@ -209,8 +256,8 @@ export default function QuestionsPage() {
       return;
     }
 
-    if (!jobDescription) {
-      setError("No job description found. Cannot save questions.");
+    if (!jobTitle) {
+      setError("No job title found. Cannot save questions.");
       return;
     }
 
@@ -222,7 +269,8 @@ export default function QuestionsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobDescription,
+          jobTitle,
+          summarizedJobDescription: summarizedJobDescription || jobDescription,
           questions,
           isPublic: false,
         }),
@@ -310,9 +358,14 @@ export default function QuestionsPage() {
           
           <div className="space-y-3">
             <Progress value={loadingProgress} className="h-2" />
-            <p className="text-sm text-center text-gray-400">
-              Please wait, this may take a few seconds
-            </p>
+            <div className="min-h-6 flex items-center justify-center">
+              <p 
+                key={motivationalIndex}
+                className="text-sm text-center text-gray-400 animate-[fadeIn_0.5s_ease-in-out]"
+              >
+                {motivationalMessages[motivationalIndex]}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -398,7 +451,7 @@ export default function QuestionsPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Your Interview Questions
+                {jobTitle || "Your Interview Questions"}
               </h1>
               <p className="text-gray-400">
                 {questions.length} {questions.length === 1 ? 'question' : 'questions'} generated
@@ -411,7 +464,7 @@ export default function QuestionsPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleDownload}
-                className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-emerald-500/50"
+                className="bg-gray-800 text-white border-emerald-500/50 hover:bg-gray-700 hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all duration-300"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download
@@ -423,8 +476,8 @@ export default function QuestionsPage() {
                 onClick={handleSaveQuestions}
                 disabled={isSaving || isSaved}
                 className={isSaved 
-                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" 
-                  : "border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-emerald-500/50"
+                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300" 
+                  : "bg-gray-800 text-white border-emerald-500/50 hover:bg-gray-700 hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all duration-300"
                 }
               >
                 <Bookmark className="mr-2 h-4 w-4" />
@@ -438,8 +491,8 @@ export default function QuestionsPage() {
                   onClick={handleMakePublic}
                   disabled={isSaving}
                   className={isPublic 
-                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" 
-                    : "border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-emerald-500/50"
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300" 
+                    : "bg-gray-800 text-white border-emerald-500/50 hover:bg-gray-700 hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all duration-300"
                   }
                 >
                   <Globe className="mr-2 h-4 w-4" />

@@ -34,7 +34,8 @@ export type GeneratedQuestionSetDTO = {
  * (future-proof)
  */
 export type SaveQuestionSetDTO = {
-  jobDescription: string;
+  jobTitle: string;
+  summarizedJobDescription: string;
   questions: QuestionDTO[];
   isPublic?: boolean;
 };
@@ -44,6 +45,8 @@ export type SaveQuestionSetDTO = {
  * after generation (and optional save)
  */
 export type GenerateQuestionsResponseDTO = {
+  jobTitle: string;
+  summarizedJobDescription: string;
   questions: QuestionDTO[];
   saved?: boolean;
   questionSetId?: string;
